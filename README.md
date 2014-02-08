@@ -17,3 +17,6 @@ Configure your REST server to allow access from all domains:
 ---
 
     Access-Control-Allow-Origin: *
+
+
+Or just run it from here: http://jjfiv.github.io/rest-debug-form/index.html
