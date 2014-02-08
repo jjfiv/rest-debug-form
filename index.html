@@ -1,0 +1,115 @@
+<html>
+<head>
+<title>Single Page REST</title>
+<script src="//cdnjs.cloudflare.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/lodash.js/2.4.1/lodash.min.js"></script>
+</head>
+<body>
+
+<form id="req-form" action="#">
+  <table>
+    <th>Settings</th>
+    <tr>
+      <td>
+        Server: <input type="text" id="req-path" value="http://localhost:1234/debug" size="80" /> 
+        Method: <select id="req-method">
+          <option value="GET" selected="true">GET</option>
+          <option value="POST">POST</option>
+        </select>
+      </td>
+    </tr>
+  </table>
+
+  Request:<br />
+  <div id="req-body-get">
+    <table id="req-get-kv-table">
+      <th>Key</th><th>Value</th><th>
+    </table>
+    <input id="req-more-parms" type="button" value="More" />
+  </div>
+  <div id="req-body-post" style="display:none;">
+    <textarea id="req-body" cols=80 rows=20></textarea>
+  </div>
+  <br />
+  <input id="do-request" type="submit" value="Submit" />
+
+<table>
+  <th>Results</th>
+  <tr>
+    <td>
+      <textarea id="raw-results" cols=80 rows=40></textarea>
+    </td>
+  </tr>
+</table>
+</form>
+
+</body>
+<script>
+
+var reqForm = $("#req-form");
+var reqPath = function() { return $("#req-path").val(); };
+var reqBody = function() { return $("#req-body").val(); };
+var reqMethod = function() { return $("#req-method option:selected").attr("value"); };
+
+var reqGetObj = function() {
+  return _($("#req-get-kv-table tr").toArray()).rest().map(function (el) {
+    var kv = $(el).find("input").toArray()
+    var k = $(kv[0]).val()
+    var v = $(kv[1]).val()//.replace(/\s/g, "+")
+
+    if(!k) return null;
+
+    var obj = {}
+    obj[k] = v;
+    return obj;
+  }).compact().reduce(_.merge);
+}
+
+var prevClicked = null;
+
+var reqAddRow = function() {
+  var newRow = $('<tr>'+
+    '<td><input type="text" name="key" /></td>' +
+    '<td><input type="text" name="value" /></td>' +
+    '<td><input class="delete-row" type="button" value="Delete" /></td>' +
+    '</tr>');
+
+  $("#req-get-kv-table > tbody:last").append(newRow);
+  newRow.find(".delete-row").click(function(evt) {
+    var row = $(evt.target).parent().parent()
+    row.remove();
+  });
+}
+
+// on more, add new row
+$("#req-more-parms").click(reqAddRow);
+// start with three rows
+_.times(3, reqAddRow);
+
+var rawResults = $("#raw-results")
+reqForm.submit(function (evt) {
+  evt.preventDefault();
+
+  console.log(reqPath())
+
+  var method = reqMethod();
+  var data = null;
+  data = reqGetObj();
+
+  var ajaxOpts = {
+    type: method,
+    url: reqPath(),
+    data: data,
+    crossDomain: true
+  }
+  console.log(ajaxOpts);
+  $.ajax(ajaxOpts).done(function(data) {
+    rawResults.val(JSON.stringify(data));
+    console.log(data);
+  }).error(function(req, status, err) {
+    console.log("error: "+status+" "+err)
+  });
+});
+
+</script>
+</html>
